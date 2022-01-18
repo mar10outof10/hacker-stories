@@ -23,7 +23,7 @@ const App = () => {
     }
   ];
 
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTerm, setSearchTerm] = React.useState('React');
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -36,7 +36,7 @@ const App = () => {
     <div className="App">
       <h1>My Hacker Stories</h1>
 
-      <Search onSearch={handleSearch} />
+      <Search search={searchTerm} onSearch={handleSearch} />
 
       <hr />
 
@@ -45,31 +45,29 @@ const App = () => {
   )
 };
 
-const Search = (props) => {
-  return(
-    <div>
-      <label htmlFor="search">Search: </label>
-      <input id="search" type="text" onChange={props.onSearch}/>
-    </div>
-  )
-};
+const Search = ({search, onSearch}) => (
+  <div>
+    <label htmlFor="search">Search: </label>
+    <input id="search" type="text" value={search} onChange={onSearch}/>
+  </div>
+)
 
-const List = (props) => (
+const List = ({list}) => (
   <ul style={{ color: 'purple', display: 'flex', flexDirection: 'column', width: '400px', margin: '0 auto' }}>
-    {props.list.map((item) => (
-      <Item key={item.objectID} item={item} />
+    {list.map(({ objectID, ...item}) => (
+      <Item key={objectID} {...item} />
     ))}
   </ul>
 )
 
-const Item = (props) => (
+const Item = ({title, url, author, num_comments, points}) => (
       <li style={{ paddingBottom: '12px', listStyle: 'inside square', display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', columnGap: '18px' }}>
         <span>
-          <a href={props.item.url}>{props.item.title}</a>
+          <a href={url}>{title}</a>
         </span>
-        <span>{props.item.author}</span>
-        <span>{props.item.num_comments}</span>
-        <span>{props.item.points}</span>
+        <span>{author}</span>
+        <span>{num_comments}</span>
+        <span>{points}</span>
       </li>
 )
 export default App;
