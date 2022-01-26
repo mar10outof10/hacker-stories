@@ -1,47 +1,58 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const useSemiPersistentState = (key, initialState) => {
-  const [value, setValue] = React.useState(
+  const [value, setValue] = useState(
     localStorage.getItem(key) ?? initialState
   )
 
-  React.useEffect(() => {
+  useEffect(() => {
     localStorage.setItem(key, value)
   }, [value, key])
 
   return [value, setValue];
 }
 
+const initialStories = [
+  {
+    title: 'React',
+    url: 'https://reactjs.org/',
+    author: 'Jordan Walke',
+    num_comments: 3,
+    points: 4,
+    objectID: 0,
+  },
+  {
+    title: 'Redux',
+    url: 'https://redux.js.org/',
+    author: 'Dan Abramov, Andrew Clark',
+    num_comments: 2,
+    points: 5,
+    objectID: 1,
+  }
+];
+
 const App = () => {
-  const stories = [
-    {
-      title: 'React',
-      url: 'https://reactjs.org/',
-      author: 'Jordan Walke',
-      num_comments: 3,
-      points: 4,
-      objectID: 0,
-    },
-    {
-      title: 'Redux',
-      url: 'https://redux.js.org/',
-      author: 'Dan Abramov, Andrew Clark',
-      num_comments: 2,
-      points: 5,
-      objectID: 1,
-    }
-  ];
 
   const [searchTerm, setSearchTerm] = useSemiPersistentState(
     'search',
     'React'
   );
 
+  const [stories, setStories] = useState(initialStories);
+
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
   };
   
+  const handleRemovedStory = (item) => {
+    const newStories = stories.filter(
+      story => item.objectID !== story.objectID
+    );
+    console.log(item, {...stories});
+
+    setStories(newStories);
+  }
 
   const searchedStories = stories.filter((story) => story.title.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -53,6 +64,7 @@ const App = () => {
       <InputWithLabel
         id="search"
         value={searchTerm}
+        isFocused
         onInputChange={handleSearch}
       >
         <strong>Search: </strong>
@@ -60,41 +72,66 @@ const App = () => {
 
       <hr />
 
-      <List list={searchedStories}/>
+      <List
+        list={searchedStories}
+        onRemoveItem={handleRemovedStory}
+      />
     </div>
   )
 };
 
-const InputWithLabel = ({id, label, value, type="text", onInputChange, children}) => (
-  <>
-    <div>
-      <label htmlFor={id}>{children}</label>
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={onInputChange}
-      />
-    </div>
-  </>
-)
+const InputWithLabel = ({id, value, type="text", isFocused, onInputChange, children}) => {
+  const inputRef = useRef();
 
-const List = ({list}) => (
+  useEffect(() => {
+    if (isFocused && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isFocused]);
+
+  return (
+    <>
+      <div>
+        <label htmlFor={id}>{children}</label>
+        <input
+          id={id}
+          type={type}
+          value={value}
+          autoFocus={isFocused}
+          onChange={onInputChange}
+          />
+      </div>
+    </>
+  )
+}
+
+const List = ({list, onRemoveItem}) => (
   <ul style={{ color: 'purple', display: 'flex', flexDirection: 'column', width: '400px', margin: '0 auto' }}>
-    {list.map(({ objectID, ...item}) => (
-      <Item key={objectID} {...item} />
+    {list.map((item) => (
+      <Item
+        key={item.objectID}
+        item={item}
+        onRemoveItem={onRemoveItem}
+        />
     ))}
   </ul>
 )
 
-const Item = ({title, url, author, num_comments, points}) => (
-      <li style={{ paddingBottom: '12px', listStyle: 'inside square', display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', columnGap: '18px' }}>
-        <span>
-          <a href={url}>{title}</a>
-        </span>
-        <span>{author}</span>
-        <span>{num_comments}</span>
-        <span>{points}</span>
-      </li>
-)
+const Item = ({item, onRemoveItem}) => {
+  return (
+    <li style={{ paddingBottom: '12px', listStyle: 'inside square', display: 'grid', gridTemplateColumns: '1fr 3fr 1fr 1fr', columnGap: '18px' }}>
+      <span>
+        <a href={item.url}>{item.title}</a>
+      </span>
+      <span>{item.author}</span>
+      <span>{item.num_comments}</span>
+      <span>{item.points}</span>
+      <span>
+        <button type="button" onClick={() => onRemoveItem(item)}>
+          Dismiss
+        </button>
+      </span>
+    </li>
+  )
+}
 export default App;
