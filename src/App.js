@@ -105,7 +105,6 @@ const Item = ({item, onRemoveItem}) => {
 
 
 const App = () => {
-
   const [searchTerm, setSearchTerm] = useSemiPersistentState(
     'search',
     'React'
@@ -115,36 +114,29 @@ const App = () => {
     `${API_ENDPOINT}${searchTerm}`
   );
 
-
   const [stories, dispatchStories] = useReducer(
     storiesReducer,
     { data: [], isLoading: false, isError: false }
   );
 
-  const handleFetchStories = useCallback(() => {
+  const handleFetchStories = useCallback(async () => {
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
+    try {
+      const result = await axios.get(url);
     
-    axios
-      .get(url)
-      .then(result => {
-        dispatchStories({
-          type: 'STORIES_FETCH_SUCCESS',
-          payload: result.data.hits,
-        });
-      })
-      .catch(() => 
-        dispatchStories({ type: 'STORIES_FETCH_FAILURE' })
-      );
+      dispatchStories({
+        type: 'STORIES_FETCH_SUCCESS',
+        payload: result.data.hits,
+      });
+    } catch {
+      dispatchStories({ type: 'STORIES_FETCH_FAILURE' });
+    }
   }, [url]);
 
   useEffect(() => {
     handleFetchStories();
   }, [handleFetchStories]);
 
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-  };
-  
   const handleRemovedStory = (item) => {
     dispatchStories({
       type: 'REMOVE_STORY',
