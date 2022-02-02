@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect, useRef, useReducer } from 'react';
+import React, { useState, useEffect, useRef, useReducer, useCallback } from 'react';
 
 const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query=';
 
@@ -59,16 +59,14 @@ const InputWithLabel = ({id, value, type="text", isFocused, onInputChange, child
 
   return (
     <>
-      <div>
-        <label htmlFor={id}>{children}</label>
-        <input
-          id={id}
-          type={type}
-          value={value}
-          autoFocus={isFocused}
-          onChange={onInputChange}
-          />
-      </div>
+      <label htmlFor={id}>{children}</label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        autoFocus={isFocused}
+        onChange={onInputChange}
+      />
     </>
   )
 }
@@ -112,20 +110,20 @@ const App = () => {
     'React'
   );
 
+  const [url, setUrl] = useState(
+    `${API_ENDPOINT}${searchTerm}`
+  );
+
+
   const [stories, dispatchStories] = useReducer(
     storiesReducer,
     { data: [], isLoading: false, isError: false }
   );
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-
-  const handleFetchStories = React.useCallback(() => {
-    if (!searchTerm) return;
-
+  const handleFetchStories = useCallback(() => {
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
     
-    fetch(`${API_ENDPOINT}${searchTerm}`)
+    fetch(url)
     .then((response) => response.json())
     .then(result => {
       dispatchStories({
@@ -136,7 +134,7 @@ const App = () => {
     .catch(() => 
       dispatchStories({ type: 'STORIES_FETCH_FAILURE' })
     );
-  }, [searchTerm]);
+  }, [url]);
 
   useEffect(() => {
     handleFetchStories();
@@ -153,9 +151,13 @@ const App = () => {
     });
   }
 
-  const searchedStories = stories.data.filter((story) =>
-    story.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleSearchInput = event => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleSearchSubmit = () => {
+    setUrl(`${API_ENDPOINT}${searchTerm}`)
+  }
 
   return (
 
@@ -166,10 +168,18 @@ const App = () => {
         id="search"
         value={searchTerm}
         isFocused
-        onInputChange={handleSearch}
+        onInputChange={handleSearchInput}
       >
         <strong>Search: </strong>
       </InputWithLabel>
+
+      <button
+        type="button"
+        disabled={!searchTerm}
+        onClick={handleSearchSubmit}
+      >
+        Submit
+      </button>
 
       <hr />
 
@@ -179,7 +189,7 @@ const App = () => {
         <p>Loading ...</p>
       ) : (
         <List
-          list={searchedStories}
+          list={stories.data}
           onRemoveItem={handleRemovedStory}
         />
       )}
